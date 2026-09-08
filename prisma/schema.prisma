@@ -1,0 +1,105 @@
+// schema.prisma
+// Backend com 4 dominios independentes — base para atividade de testes caixa-preta (UC11)
+// Cada dominio tem uma entidade principal (foco dos casos de teste) e uma entidade
+// secundaria de apoio (usada para casos de relacionamento invalido).
+// SQLite: nao exige instalacao de servidor de banco nos laboratorios.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ---------- Dominio 1: Loja ----------
+
+model Categoria {
+  id       Int       @id @default(autoincrement())
+  nome     String    @unique
+  criadoEm DateTime  @default(now())
+  produtos Produto[]
+}
+
+model Produto {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  preco       Float
+  estoque     Int       @default(0)
+  categoria   Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+  criadoEm    DateTime  @default(now())
+}
+
+// ---------- Dominio 2: Restaurante ----------
+
+model Prato {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  preco    Float
+  vegano   Boolean  @default(false)
+  criadoEm DateTime @default(now())
+}
+
+// Nota: SQLite nao suporta enum nativo no Prisma — os valores validos de cada
+// campo de status estao documentados em comentario e devem ser validados no
+// codigo da aplicacao (nao no banco).
+
+model Reserva {
+  id            Int      @id @default(autoincrement())
+  nomeCliente   String
+  dataHora      DateTime
+  numeroPessoas Int
+  mesa          Int
+  status        String   @default("CONFIRMADA") // CONFIRMADA | CANCELADA | CONCLUIDA
+  criadoEm      DateTime @default(now())
+}
+
+// ---------- Dominio 3: Escola ----------
+
+model Escola {
+  id       Int      @id @default(autoincrement())
+  nome     String   @unique
+  cidade   String
+  criadoEm DateTime @default(now())
+  cursos   Curso[]
+}
+
+model Curso {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  cargaHoraria Int
+  escola       Escola   @relation(fields: [escolaId], references: [id])
+  escolaId     Int
+  criadoEm     DateTime @default(now())
+}
+
+// ---------- Dominio 4: Clientes ----------
+
+model Cliente {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  cpf      String   @unique
+  email    String?
+  criadoEm DateTime @default(now())
+  compras  Compra[]
+}
+
+model Compra {
+  id         Int      @id @default(autoincrement())
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  clienteId  Int
+  descricao  String
+  valorTotal Float
+  status     String   @default("PENDENTE") // PENDENTE | PAGO | CANCELADO
+  criadoEm   DateTime @default(now())
+}
+
+model Usuario {
+  id    Int     @id @default(autoincrement())
+  nome  String
+  cpf   String  @unique
+  senha String
+  email String?
+}
